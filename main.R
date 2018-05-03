@@ -3,7 +3,8 @@
 # installation: just one line: source("http://cf.10xgenomics.com/supp/cell-exp/rkit-install-2.0.0.R")
 library(cellrangerRkit)
 packageVersion("cellrangerRkit")
-workdir = "~/Desktop/SingleCellDataProcessR/Data/"
+workdir = "~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/"
+# workdir = "~/Desktop/singlecelldata/old/"
 # main starts
 datapath = c("NS_084_Yoder/CB-ECFC", "NS_084_Yoder/iPS-ECFC-2", "NS_085_Yang/KO-6", "NS_085_Yang/WT-5")
 for(i in 1:4){
@@ -14,7 +15,10 @@ for(i in 1:4){
   dim(fData(gbm)) # data frame of genes
   dim(pData(gbm)) # data frame of cell barcodes
   expr_full_mat = as.matrix(exprs(gbm))
+  expr_full_mat.colsum = colSums(expr_full_mat)
+  expr_full_mat.norm = expr_full_mat %*% diag(1 / expr_full_mat.colsum)
   write.table(expr_full_mat, file = paste(workdir, datapath[i],"_expr.csv", sep=""),row.names=T, na="",col.names=NA, sep=",")
+  write.table(expr_full_mat.norm, file = paste(workdir, datapath[i],"_expr_normalized.csv", sep=""),row.names=T, na="",col.names=NA, sep=",")
   write.table(fData(gbm), file = paste(workdir, datapath[i],"_genes.csv", sep=""),row.names=T, na="",col.names=NA, sep=",")
   write.table(pData(gbm), file = paste(workdir, datapath[i],"_barcodes.csv", sep=""),row.names=T, na="",col.names=NA, sep=",")
 }
