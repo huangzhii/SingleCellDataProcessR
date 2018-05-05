@@ -8,12 +8,14 @@ setwd("~/Documents/DrZhiHanResearch/SingleCellDataProcessR/")
 #CB-ECFC
 pbmc.data <- Read10X(data.dir = "~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_084_Yoder/CB-ECFC/outs/filtered_gene_bc_matrices/GRCh38")
 female = read.table("~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_084_Yoder/NS_084_Yoder_CB-ECFC_genderClassfication_female.txt", header = T)
+fname.tosave = "CB-ECFC-female"
 #iPS-ECFC-2
 pbmc.data <- Read10X(data.dir = "~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_084_Yoder/iPS-ECFC-2/outs/filtered_gene_bc_matrices/GRCh38")
 female = read.table("~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_084_Yoder/NS_084_Yoder_iPS-ECFC_genderClassfication_female.txt", header = T)
-#KO-6
+fname.tosave = "iPS-ECFC-female"
+# #KO-6
 pbmc.data <- Read10X(data.dir = "~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_085_Yang/KO-6/outs/filtered_gene_bc_matrices/GRCh38")
-#WT-5
+# #WT-5
 pbmc.data <- Read10X(data.dir = "~/Documents/DrZhiHanResearch/singlecelldata/10X_scRNA/NS_085_Yang/WT-5/outs/filtered_gene_bc_matrices/GRCh38")
 
 # Examine the memory savings between regular and sparse matrices
@@ -57,9 +59,12 @@ GenePlot(object = pbmc, gene1 = "nUMI", gene2 = "nGene")
 # 200 Note that low.thresholds and high.thresholds are used to define a
 # 'gate'.  -Inf and Inf should be used if you don't want a lower or upper
 # threshold.
-pbmc <- FilterCells(object = pbmc, subset.names = c("nGene", "percent.mito"), 
+pbmc <- FilterCells(object = pbmc, subset.names = c("nGene", "percent.mito"),
                     low.thresholds = c(3000, -Inf), high.thresholds = c(9500, 0.1),
                     cells.use = female[,1])
+
+# pbmc <- FilterCells(object = pbmc, subset.names = c("nGene", "percent.mito"), 
+#                     low.thresholds = c(3000, -Inf), high.thresholds = c(9500, 0.1))
 
 pbmc <- NormalizeData(object = pbmc, normalization.method = "LogNormalize", 
                       scale.factor = 10000)
@@ -67,6 +72,9 @@ pbmc <- NormalizeData(object = pbmc, normalization.method = "LogNormalize",
 pbmc <- FindVariableGenes(object = pbmc, mean.function = ExpMean, dispersion.function = LogVMR, 
                           x.low.cutoff = 0.0125, x.high.cutoff = 3, y.cutoff = 0.5)
 length(x = pbmc@var.genes)
+
+filtered.matrix = data.frame(as.matrix(pbmc@data))
+write.csv(filtered.matrix, file = "~/Desktop/filtered_matrix.csv", row.names = T, col.names = T)
 
 
 # Scaling the data and removing unwanted sources of variation
@@ -77,7 +85,22 @@ pbmc <- RunPCA(object = pbmc, pc.genes = pbmc@var.genes, do.print = TRUE, pcs.pr
                genes.print = 5)
 
 # Examine and visualize PCA results a few different ways
-PrintPCA(object = pbmc, pcs.print = 1:5, genes.print = 5, use.full = FALSE)
+pca.res = capture.output(PrintPCA(object = pbmc, pcs.print = 1:5, genes.print = 5, use.full = FALSE))
+pca.res = gsub("\"", "", pca.res)
+pca.res = noquote(pca.res)
+pca.res = substring(pca.res, 5, 9999)
+pca.res = gsub("^ *|(?<= ) | *$", "", pca.res, perl = TRUE)
+pca.res = gsub(" ", ",", pca.res, fixed=TRUE)
+pca.res = data.frame(pca.res)
+pca.res = data.frame(pca.res[!apply(pca.res == "", 1, all),])
+colnames(pca.res) <- NULL
+write.table(pca.res, file="~/Desktop/PCAresults.csv", row.names = F)
+
+
+
+
+# ========================================================================
+
 VizPCA(object = pbmc, pcs.use = 1:2)
 PCAPlot(object = pbmc, dim.1 = 1, dim.2 = 2)
 # ProjectPCA scores each gene in the dataset (including genes not included
